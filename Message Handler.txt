@@ -1,0 +1,71 @@
+response = Map();
+msg = message.get("text");
+suggestions = {"Practice","Enroll","Top Courses","Talk to experts","Boost Up"};
+if(operation.equals("chat"))
+{
+	if(suggestions.indexOf(msg) == -1)
+	{
+		response.put("action","reply");
+		response.put("replies",{"Hey Dude 👋! I'm Mr.PrepBot 📚. To begin with let me know your preference !"});
+		response.put("suggestions",suggestions);
+		return response;
+	}
+}
+if(!msg.isNull())
+{
+	response.put("action","context");
+	if(msg.equalsIgnoreCase("Top Courses"))
+	{
+		response.put("context_id","courses");
+		question = {"name":"best","replies":{"Good one buddy !","Which one do you want to explore? 💻 "},"suggestions":{"Top Youtube Tutorials","Best Courses"}};
+	}
+	else if(msg.equalsIgnoreCase("Talk to experts"))
+	{
+		response.put("context_id","schedule");
+		question = {"name":"schedule_app","replies":{"I am very happy to help you regarding the appointment with expert 🧑‍💻 "},"suggestions":{"Schedule an Appointment","Reschedule","Cancel Appointment","No Thanks"}};
+	}
+	else if(msg.equalsIgnoreCase("Practice"))
+	{
+		response.put("context_id","practice");
+		question = {"name":"choice","replies":{"Practice every time you get a chance ✨","Choose a skill that you want to practice"},"input":{"type":"drop-down","placeholder":"Choose a category","options":{{"value":"0","label":"linux"},{"value":"1","label":"sql"},{"value":"2","label":"code"},{"value":"3","label":"devops"},{"value":"4","label":"bash"},{"value":"5","label":"cms"},{"value":"6","label":"docker"}},"select_label":"Select","min_selection":1,"max_selection":1}};
+	}
+	else if(msg.equalsIgnoreCase("Boost Up"))
+	{
+		response.put("context_id","quirky");
+		question = {"name":"interest","replies":{"Wow! I'm excited to boost your mood 🤗 ","Shall we start ? "},"suggestions":{"Read Books","Interesting Facts"}};
+	}
+	else if(msg.equalsIgnoreCase("Enroll"))
+	{
+		response.put("context_id","Enroll");
+		queryValue = Map();
+		queryValue.put("start_index","1");
+		response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","coursera_data",queryValue);
+		query = response_get.get("records");
+		labelVal = List();
+		valList = List();
+		i = 0;
+		for each  item in query
+		{
+			st = item.get("skill_title");
+			if(!valList.contains(st))
+			{
+				valList.add(st);
+				rep = Map();
+				rep.put("value",toString(i));
+				rep.put("label",st);
+				labelVal.add(rep);
+				i = i + 1;
+			}
+		}
+		question = {"name":"skills","replies":{"Tell me and I forget, teach me and I may remember, involve me and I learn 📝 ","Choose a skill that you want to learn"},"input":{"type":"drop-down","placeholder":"Choose a skill","options":labelVal,"select_label":"Select","min_selection":1,"max_selection":1}};
+	}
+	else
+	{
+		response.put("action","reply");
+		response.put("replies",{"Hey Dude 👋! I'm Mr.PrepBot 📚. To begin with let me know your preference !"});
+		response.put("suggestions",suggestions);
+		return response;
+	}
+	response.put("questions",{question});
+}
+return response;

@@ -1,0 +1,5 @@
+response = Map();
+response.put("action","reply");
+response.put("replies",{"Hey Dude 👋 ! I'm Mr.PrepBot 📚. To begin with let me know your preference !"});
+response.put("suggestions",{"Practice","Enroll","Top Courses","Talk to experts","Boost Up"});
+return response;

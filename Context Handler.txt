@@ -1,0 +1,790 @@
+response = Map();
+info answers;
+correct = Map();
+serviceId = "114337000000022053";
+staffId = "114337000000022015";
+response.put("action","context");
+response.put("context_id",context_id);
+if(context_id.equals("practice"))
+{
+	choice = answers.get("choice").get("text");
+	if(!answers.containsKey("opt"))
+	{
+		question = {"name":"opt","replies":{"Ok Buddy!","Click Go ahead when you are ready"},"suggestions":{"Go ahead"}};
+		response.put("questions",{question});
+	}
+	else
+	{
+		opt = answers.get("opt").get("text");
+		if(opt.containsIgnoreCase("one more") || opt.containsIgnoreCase("go ahead"))
+		{
+			//response.put("action","context");
+			//response.put("context_id","practice");
+			//call quiz api and get a sql question
+			sqlResponse = invokeurl
+			[
+				url :"https://quizapi.io/api/v1/questions?apiKey=tObTyppa6Cq7qO8JOqaQB7Lb6ZltwVde9xTVjPC5&category=" + choice + "&limit=5"
+				type :GET
+				connection:"quizapi_connection"
+			];
+			rand = randomNumber(0,4);
+			options = {" " + sqlResponse.get(rand).get("question") + " "};
+			f = sqlResponse.get(rand).get("answers");
+			answer = sqlResponse.get(rand).get("correct_answer");
+			if(answer == null)
+			{
+				answer = "answer_a";
+			}
+			alpha = {"answer_a","answer_b","answer_c","answer_d","answer_e","answer_f"};
+			ii = 0;
+			for each  ans in f
+			{
+				if(ans == null)
+				{
+					break;
+				}
+				else
+				{
+					options.add(alpha.get(ii) + "." + ans);
+					ii = ii + 1;
+				}
+			}
+			options.add("I think you got it right. The correct Answer is " + answer + " ✔️ ");
+			question = {"name":"opt","replies":options,"suggestions":{"One more","Main menu","No thanks"}};
+			response.put("questions",{question});
+		}
+		else if("No thanks".equals(opt))
+		{
+			response.put("action","context");
+			response.put("context_id","nothanks");
+			question = {"name":"select","replies":{"Will you rate me out of 5 🥺 "},"input":{"type":"star-rating","level":"5"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			response.put("action","reply");
+			response.put("replies",{"What else do you want?"});
+			response.put("suggestions",{"Practice","Enroll","Top Courses","Talk to experts","Boost Up"});
+			return response;
+		}
+	}
+}
+else if(context_id.equals("courses"))
+{
+	best = answers.get("best").get("text");
+	if(best.equals("Top Youtube Tutorials"))
+	{
+		if(!answers.containsKey("tuts_type"))
+		{
+			question = {"name":"tuts_type","replies":{"Nice! It's always intersting to learn new things! 📝 "," Tell me. what are you looking for? Example: Python"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			tuts_type = answers.get("tuts_type").get("text");
+			tuts_type = tuts_type.replaceAll(" ","");
+			if(!answers.containsKey("videos"))
+			{
+				url_encoded = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + tuts_type + "&orderby=rating&maxResults=10000&key=AIzaSyBF0V1BIaYHisbjmX2cRNcbeAJ2ZAr9PZ0";
+				utubeResponse = invokeurl
+				[
+					url :url_encoded
+					type :GET
+					connection:"googleyoutube_connection"
+				];
+				video = utubeResponse.get("items");
+				nums = {{0},{1},{2}};
+				lp = List();
+				icons = List();
+				im = List();
+				for each  i in nums
+				{
+					l = video.get(i.get(0));
+					if("youtube#video".equals(l.get("id").get("kind")))
+					{
+						link1 = "https://www.youtube.com/watch?v=" + l.get("id").get("videoId");
+						lp.add(link1);
+						icons.add(l.get("snippet").get("title"));
+						im.add(l.get("snippet").get("thumbnails").get("high").get("url"));
+					}
+					else if("youtube#playlist".equals(l.get("id").get("kind")))
+					{
+						link1 = "https://www.youtube.com/playlist?list=" + l.get("id").get("playlistId");
+						lp.add(link1);
+						icons.add(l.get("snippet").get("title"));
+						im.add(l.get("snippet").get("thumbnails").get("high").get("url"));
+					}
+				}
+				if(!answers.containsKey("done"))
+				{
+					response = Map();
+					response.put("action","context");
+					response.put("context_id","exit");
+					mp = {"text":"Link to access above tutorials","type":"links","links":{{"text":"Video 1","url":lp.get(0)},{"text":"Video 2","url":lp.get(1)}}};
+					question = {"name":"done","replies":{"Great! ",{"text":icons.get(0),"image":im.get(0)},{"text":icons.get(1),"image":im.get(1)},mp},"suggestions":{"Want to explore more","No thanks"}};
+					response.put("questions",{question});
+					response.put("questions",{question});
+				}
+			}
+		}
+	}
+	else if(best.equals("Best Courses"))
+	{
+		if(!answers.containsKey("skills"))
+		{
+			//question = {"name":"skills","replies":{"To begin with recommendation..","Choose your skills/lackings to recommend the best courses available...","You can select a maximum of 4"},"input":{"type":"multiple-select","options":{"AI","AWS","Blockchain","Business","C","C++","C#","Cisco","Cloud Computing","CSS","Data Science","HTML","IoT","Java","ML","Python","SQL","Web development"},"max_selection":"3"}};
+			question = {"name":"skills","replies":{"I think that's a good decision! ","Choose a skill that you want to learn"},"input":{"type":"drop-down","placeholder":"Choose a skill","options":{{"value":"0","label":"AI"},{"value":"1","label":"AWS"},{"value":"2","label":"Blockchain"},{"value":"3","label":"C"},{"value":"4","label":"C++"},{"value":"5","label":"C#"},{"value":"6","label":"Cisco"},{"value":"7","label":"Cloud Computing"},{"value":"8","label":"CSS"},{"value":"9","label":"Python"},{"value":"10","label":"HTML"},{"value":"11","label":"IoT"},{"value":"12","label":"ML"},{"value":"13","label":"Java"},{"value":"14","label":"SQL"},{"value":"15","label":"Web development"}},"select_label":"Select","min_selection":1,"max_selection":1}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			skill = answers.get("skills").get("text");
+			st = "";
+			rep = List();
+			queryValue = Map();
+			crit = "\"skill_title\"=\"" + skill + "\"";
+			queryValue.put("criteria",crit);
+			queryValue.put("start_index","1");
+			response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","coursera_data",queryValue);
+			query = response_get.get("records");
+			for each  item in query
+			{
+				st = item.get("course_title");
+				rep.add(st);
+			}
+			if(!answers.containsKey("TopCourse"))
+			{
+				question = {"name":"TopCourse","replies":{"I'm Searching the top courses!","Ah! I found it! :) .Here is the top courses list for you. Click to get more details."},"input":{"type":"select","options":rep}};
+				response.put("questions",{question});
+			}
+			else
+			{
+				course = answers.get("TopCourse").get("text");
+				queryValue = Map();
+				crit = "\"course_title\"=\"" + course + "\"";
+				queryValue.put("criteria",crit);
+				queryValue.put("start_index","1");
+				response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","coursera_data",queryValue);
+				query = response_get.get("records").toCollection();
+				info query;
+				details = {"Showing the details about the course you selected..."};
+				details.add(course + " - Offered by " + query.get("course_organization"));
+				details.add("Type : " + query.get("course_Certificate_type"));
+				details.add("Ratings : " + query.get("course_rating") + " ⭐'s");
+				details.add("Number of students enrolled : " + query.get("course_students_enrolled"));
+				details.add("Course Difficulty : " + query.get("course_difficulty"));
+				//course_difficulty
+				details.add("Cost : Rs." + query.get("Cost"));
+				details.add("Want to continue ? ");
+				response = Map();
+				response.put("action","context");
+				response.put("context_id","exit");
+				question = {"name":"done","replies":details,"suggestions":{"Main menu","No thanks"}};
+				response.put("questions",{question});
+			}
+		}
+	}
+}
+else if(context_id.equals("schedule"))
+{
+	schedule_app = answers.get("schedule_app").get("text");
+	if(schedule_app.equals("Schedule an Appointment"))
+	{
+		if(!answers.containsKey("sname"))
+		{
+			question = {"name":"sname","replies":{"Great! I just need a few details","To begin with, Can I have your name?"},"input":{"type":"name","placeholder":"Enter your name"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			name = answers.get("sname").get("text");
+			if(!answers.containsKey("email"))
+			{
+				question = {"name":"email","replies":{"....and your email address?","I'll use this to send you an invite mail"},"input":{"type":"email","placeholder":"Enter your email","error":{"Enter a valid email"}}};
+				response.put("questions",{question});
+			}
+			else
+			{
+				email = answers.get("email").get("text");
+				queryValue = Map();
+				valueC = "\"Email\"=\"" + email + "\"";
+				queryValue.put("criteria",valueC);
+				queryValue.put("start_index","1");
+				response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",queryValue);
+				query = response_get.get("records").toCollection();
+				if(query.size() != 0 && query.get("status") != "cancel")
+				{
+					response = Map();
+					response.put("action","context");
+					response.put("context_id","exit");
+					question = {"name":"done","replies":{"Oh! It's look like you have already scheduled an appointment.","Okay. Now !? 👇"},"suggestions":{"Want to explore more","No thanks"}};
+					response.put("questions",{question});
+				}
+				else
+				{
+					// OTP / Mail Verification
+					// responseR = zoho.salesiq.visitorsession.set("SMART PHARAOH", session_map, "salesiqconnection");
+					//otp = toString(rand1) + toString(rand2) + toString(rand3) + toString(rand4) + toString(rand5);
+					// sendmail
+					// [
+					// from :zoho.adminuserid
+					// to :email
+					// subject :"Otp for Expert Session : " + zoho.currenttime
+					// message :"<div style='margin-left: 20%;'><p style='font-size:medium;'>Hi " + name + ",</p><p>Please use the OTP below to verify your email to proceed with appointment booking.</p><h1 style='color: rgb(32, 93, 206); font-weight: bold;'>" + otp + "</h1><p>Please don't share your OTP with anyone.</p><p>Regards,</p><p>Team Edspired</p><img src='https://thumbs.dreamstime.com/z/bot-learning-study-chatbot-book-online-education-vector-cartoon-illustration-bot-learning-study-chatbot-book-112145804.jpg' alt='Edspired logo' width='50' height='50'></div>"
+					// ]
+					//zoho.salesiq.visitorsession.get("SMART PHARAOH","otp","zohosession_connection").get("data").get("otp");
+					//zoho.salesiq.visitorsession.set("SMART PHARAOH",{"otp":otp},"salesiqconnection");
+					// if(!answers.containsKey("enterotp"))
+					// {
+					// 	info responseR;
+					// question = {"name":"enterotp","replies":{"Could you check your inbox for an otp 📬"},"input":{"type":"name","placeholder":"Enter your OTP here","value":"","error":{""}}};
+					// response.put("questions",{question});
+					// }
+					// else{	 
+					// enteredotp = answers.get("enterotp").get("text");
+					// validotp = zoho.salesiq.visitorsession.get("SMART PHARAOH", "otp", "salesiqconnection").get("data").get("otp");
+					// if(enteredotp.equals("00"))
+					// {
+					//info "success";
+					if(!answers.containsKey("phone"))
+					{
+						question = {"name":"phone","replies":{"Can I have your phone number ?","Our representative will call you on this number"},"input":{"type":"tel","placeholder":"Enter your phone number","error":{"Enter a valid phone number"}}};
+						response.put("questions",{question});
+					}
+					else
+					{
+						phone = answers.get("phone").get("text");
+						if(!answers.containsKey("date"))
+						{
+							slots = {"type":"calendar","time":false,"tz":false,"from":"+0","label":"Schedule a meeting","to":"+8","select_label":"Choose a slot"};
+							question = {"name":"date","replies":{"Our representative will call you soon.","Would you like to pick a time slot as per your convenience?","Choose a suitable date and time"},"skippable":"true","input":slots};
+							response.put("questions",{question});
+						}
+						else
+						{
+							date = answers.get("date");
+							if(!date.get("text").equalsIgnoreCase("-"))
+							{
+								appointmentDate = date.get("text");
+								if(!answers.containKey("slots"))
+								{
+									availableSlots = zoho.bookings.getAvailableSlots(serviceId,staffId,appointmentDate,"zoho_connection");
+									slots = availableSlots.get("response").get("returnvalue").get("data");
+									if(slots.get(0).equals("Slots Not Available"))
+									{
+										response = Map();
+										response.put("action","context");
+										response.put("context_id","exit");
+										question = {"name":"done","replies":{"Sorry, we don't have a slots for that day","Okay ! Now.."},"suggestions":{"Main menu","No thanks"}};
+										response.put("questions",{question});
+									}
+									else
+									{
+										question = {"name":"slots","replies":{"Please choose the following slots as for your convenience"},"suggestions":slots};
+										response.put("questions",{question});
+										return response;
+									}
+								}
+								else
+								{
+									slots = answers.get("slots").get("text");
+									appointmentDate = appointmentDate + " " + slots + ":00";
+									if(!answers.containsKey("thanks"))
+									{
+										timeZone = "Asia/Calcutta";
+										studentDetails = Map();
+										studentDetails.put("name",name);
+										studentDetails.put("email",email);
+										studentDetails.put("phone_number",phone);
+										apponitmentResponse = zoho.bookings.createAppointment(serviceId,appointmentDate,studentDetails,staffId,timeZone,true,"zoho_connection");
+										status = apponitmentResponse.get("response").get("status");
+										if(status.equalsIgnoreCase("success"))
+										{
+											sendmail
+											[
+												from :zoho.adminuserid
+												to :email
+												subject :"Appointment Confirmation " + zoho.currenttime
+												message :"<div style='margin-left: 20%;'><p style='font-size:medium;'>Hi " + name + ",</p><p>Congrats! Your appointment to have a talk with an expert has been confirmed.</p><p>You will get a follow up mail to give you more details about this session. On the day of the appointment, you will receive an invite link for joining the session.</p><p>Regards,</p><p>Team Pedagogy</p><img src='https://thumbs.dreamstime.com/z/bot-learning-study-chatbot-book-online-education-vector-cartoon-illustration-bot-learning-study-chatbot-book-112145804.jpg' alt='Pedagogy logo' width='50' height='50'></div>"
+											]
+											// store in sheet
+											last = name + "," + email + "," + phone + "," + apponitmentResponse.get("response").get("returnvalue").get("booking_id") + "," + appointmentDate + ",Yes";
+											response_insert = zoho.sheet.insertCSV("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",last);
+											response = Map();
+											response.put("action","context");
+											response.put("context_id","exit");
+											question = {"name":"done","replies":{"Congrats! You have successfully registered"},"suggestions":{"Want to explore more","No thanks"}};
+											response.put("questions",{question});
+										}
+										else
+										{
+											response = Map();
+											response.put("action","context");
+											response.put("context_id","exit");
+											question = {"name":"done","replies":{"Oops! Something went wrong.","Try again later."},"suggestions":{"Want to explore more","No thanks"}};
+											response.put("questions",{question});
+										}
+									}
+									else
+									{
+										response = Map();
+										response.put("action","context");
+										response.put("context_id","exit");
+										question = {"name":"done","replies":{"That's ok :) "},"suggestions":{"Main menu","No thanks"}};
+										response.put("questions",{question});
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else if(schedule_app.equals("Cancel Appointment"))
+	{
+		if(!answers.containsKey("email"))
+		{
+			question = {"name":"email","replies":{"Can I have your email to cancel the appointment"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			email = answers.get("email").get("text");
+			queryValue = Map();
+			valueC = "\"Email\"=\"" + email + "\"";
+			queryValue.put("criteria",valueC);
+			queryValue.put("start_index","1");
+			response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",queryValue);
+			book_id = response_get.get("records").toCollection().get("booking_id");
+			valuesMap = Map();
+			valuesMap.put("action","cancel");
+			valuesresponse = zoho.bookings.updateRecord("appointment",book_id,valuesMap,"zoho_connection");
+			status = valuesresponse.get("response").get("status");
+			if(status.equalsIgnoreCase("success"))
+			{
+				// store in sheet
+				new_values = Map();
+				new_values.put("status","cancel");
+				value_criteria = "\"Email\"=\"" + email + "\"";
+				response_update = zoho.sheet.updateRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",value_criteria,new_values);
+				response = Map();
+				response.put("action","context");
+				response.put("context_id","exit");
+				question = {"name":"done","replies":{"I have successfully cancelled the appointment for you."},"suggestions":{"Want to explore more","No thanks"}};
+				response.put("questions",{question});
+			}
+			else
+			{
+				response = Map();
+				response.put("action","context");
+				response.put("context_id","exit");
+				question = {"name":"done","replies":{"Oops! Something went wrong.","Try again later."},"suggestions":{"Want to explore more","No thanks"}};
+				response.put("questions",{question});
+			}
+		}
+	}
+	else if(schedule_app.equals("Reschedule Appointment"))
+	{
+		if(!answers.containsKey("email"))
+		{
+			question = {"name":"email","replies":{"Can I have your email to reschedule the appointment"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			email = answers.get("email").get("text");
+			queryValue = Map();
+			valueC = "\"Email\"=\"" + email + "\"";
+			queryValue.put("criteria",valueC);
+			queryValue.put("start_index","1");
+			response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",queryValue);
+			book_id = response_get.get("records").toCollection().get("booking_id");
+			phone = response_get.get("records").toCollection().get("phone_number");
+			name = response_get.get("records").toCollection().get("Name");
+			valuesMap = Map();
+			valuesMap.put("action","cancel");
+			valuesresponse = zoho.bookings.updateRecord("appointment",book_id,valuesMap,"zoho_connection");
+			status = valuesresponse.get("response").get("status");
+			if(status.equalsIgnoreCase("success"))
+			{
+				// show date-time slots
+				if(!answers.containsKey("date"))
+				{
+					slots = {"type":"calendar","time":false,"tz":false,"from":"+0","label":"Schedule a meeting","to":"+8","select_label":"Choose a slot"};
+					question = {"name":"date","replies":{"Would you like to pick a time slot as per your convenience?","Choose a suitable date and time"},"skippable":"true","input":slots};
+					response.put("questions",{question});
+				}
+				else
+				{
+					date = answers.get("date");
+					if(!date.get("text").equalsIgnoreCase("-"))
+					{
+						appointmentDate = date.get("text");
+						if(!answers.containKey("slots"))
+						{
+							availableSlots = zoho.bookings.getAvailableSlots(serviceId,staffId,appointmentDate,"zoho_connection");
+							slots = availableSlots.get("response").get("returnvalue").get("data");
+							if(slots.get(0).equals("Slots Not Available"))
+							{
+								response = Map();
+								response.put("action","context");
+								response.put("context_id","exit");
+								question = {"name":"done","replies":{"Sorry, we don't have a slots for that day","Okay ! Now.."},"suggestions":{"Main menu","No thanks"}};
+								response.put("questions",{question});
+							}
+							else
+							{
+								question = {"name":"slots","replies":{"Please choose the following slots as for your convenience"},"suggestions":slots};
+								response.put("questions",{question});
+								return response;
+							}
+						}
+						else
+						{
+							slots = answers.get("slots").get("text");
+							appointmentDate = appointmentDate + " " + slots + ":00";
+							if(!answers.containsKey("thanks"))
+							{
+								timeZone = "Asia/Calcutta";
+								studentDetails = Map();
+								studentDetails.put("name",name);
+								studentDetails.put("email",email);
+								studentDetails.put("phone_number",phone);
+								apponitmentResponse = zoho.bookings.createAppointment(serviceId,appointmentDate,studentDetails,staffId,timeZone,true,"zoho_connection");
+								status = apponitmentResponse.get("response").get("status");
+								if(status.equalsIgnoreCase("success"))
+								{
+									sendmail
+									[
+										from :zoho.adminuserid
+										to :email
+										subject :"Appointment Rescheduled " + zoho.currenttime
+										message :"<div style='margin-left: 20%;'><p style='font-size:medium;'>Hi " + name + ",</p><p>Congrats! Your appointment to have a talk with an expert has been rescheduled successfully.</p><p>You will get a follow up mail to give you more details about this session. On the day of the appointment, you will receive an invite link for joining the session.</p><p>Regards,</p><p>Team Pedagogy</p><img src='https://thumbs.dreamstime.com/z/bot-learning-study-chatbot-book-online-education-vector-cartoon-illustration-bot-learning-study-chatbot-book-112145804.jpg' alt='Pedagogy logo' width='50' height='50'></div>"
+									]
+									// update
+									crit = "\"Email\"=\"" + email + "\" and \"Name\"=\"" + name + "\"";
+									booking_id = apponitmentResponse.get("response").get("returnvalue").get("booking_id");
+									new_values = Map();
+									new_values.put("booking_id",booking_id);
+									new_values.put("date",appointmentDate);
+									new_values.put("status","Yes");
+									response_update = zoho.sheet.updateRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet2",crit,new_values);
+									response = Map();
+									response.put("action","context");
+									response.put("context_id","exit");
+									question = {"name":"done","replies":{"Your Appointment has been successfully rescheduled "},"suggestions":{"Want to explore more","No thanks"}};
+									response.put("questions",{question});
+								}
+								else
+								{
+									response = Map();
+									response.put("action","context");
+									response.put("context_id","exit");
+									question = {"name":"done","replies":{"Oops! Something went wrong.","Try again later."},"suggestions":{"Want to explore more","No thanks"}};
+									response.put("questions",{question});
+								}
+							}
+							else
+							{
+								response = Map();
+								response.put("action","context");
+								response.put("context_id","exit");
+								question = {"name":"done","replies":{"That's ok :) "},"suggestions":{"Main menu","No thanks"}};
+								response.put("questions",{question});
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				response = Map();
+				response.put("action","context");
+				response.put("context_id","exit");
+				question = {"name":"done","replies":{"Oops! Something went wrong.","Try again later."},"suggestions":{"Want to explore more","No thanks"}};
+				response.put("questions",{question});
+			}
+		}
+	}
+	else
+	{
+		response = Map();
+		response.put("action","context");
+		response.put("context_id","exit");
+		question = {"name":"done","replies":{"That's ok :) "},"suggestions":{"Main menu","No thanks"}};
+		response.put("questions",{question});
+	}
+}
+else if(context_id.equals("Enroll"))
+{
+	skill = answers.get("skills").get("text");
+	st = "";
+	rep = List();
+	queryValue = Map();
+	crit = "\"skill_title\"=\"" + skill + "\"";
+	queryValue.put("criteria",crit);
+	queryValue.put("start_index","1");
+	response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","coursera_data",queryValue);
+	query = response_get.get("records");
+	for each  item in query
+	{
+		st = item.get("course_title");
+		rep.add(st);
+	}
+	if(!answers.containsKey("enroll_course"))
+	{
+		question = {"name":"enroll_course","replies":{"Here are the list of courses offered by us :) "},"input":{"type":"select","options":rep}};
+		response.put("questions",{question});
+	}
+	else
+	{
+		enroll_course = answers.get("enroll_course").get("text");
+		queryValue = Map();
+		crit = "\"course_title\"=\"" + enroll_course + "\"";
+		queryValue.put("criteria",crit);
+		queryValue.put("start_index","1");
+		response_get = zoho.sheet.getRecords("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","coursera_data",queryValue);
+		query = response_get.get("records");
+		query = query.toCollection();
+		details = {"Showing the details about the course you selected..."};
+		details.add(enroll_course + " - Offered by " + query.get("course_organization"));
+		details.add("Type : " + query.get("course_Certificate_type"));
+		details.add("Ratings : " + query.get("course_rating") + " ⭐'s");
+		details.add("Number of students enrolled : " + query.get("course_students_enrolled"));
+		amount = query.get("Cost");
+		details.add("Cost : Rs." + query.get("Cost"));
+		details.add("Check the above details before you enroll for the course");
+		if(!answers.containsKey("confirm"))
+		{
+			question = {"name":"confirm","replies":details,"input":{"type":"select","options":{"Enroll","No, Thanks"}}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			confirm = answers.get("confirm").get("text");
+			if(confirm.equals("Enroll"))
+			{
+				if(!answers.containsKey("id"))
+				{
+					question = {"name":"id","replies":{"Click on the link for payment.","After you paid the amount give us the payment i'd below. ",{"text":"The payment i'd will be sent to your given email.","type":"links","links":{{"text":"Click here","url":"https://rzp.io/l/eJknXPUl"}}}}};
+					response.put("questions",{question});
+				}
+				else
+				{
+					id = answers.get("id").get("text");
+					url_pay = "https://api.razorpay.com/v1/payments/" + id;
+					mapp = Map();
+					mapp.put("Content-Type","application/json");
+					mapp.put("Authorization","Basic " + zoho.encryption.base64Encode("rzp_test_3VXqLyIYrkykus:nkc3og7M7F3vd9qHmer6MYnK"));
+					response_pay = invokeurl
+					[
+						url :url_pay
+						type :GET
+						headers:mapp
+						connection:"razorpay_connection"
+					];
+					status = response_pay.get("status");
+					paid = response_pay.get("amount");
+					original = toNumber(amount) * 100;
+					if(status.equals("captured") && paid.equals(original))
+					{
+						if(!answers.containsKey("std_name"))
+						{
+							question = {"name":"std_name","replies":{"Payment successfull !","May I know your name ?"},"input":{"type":"name","placeholder":"Enter your name"}};
+							response.put("questions",{question});
+						}
+						else
+						{
+							std_name = answers.get("std_name").get("text");
+							if(!answers.containsKey("std_phone"))
+							{
+								question = {"name":"std_phone","replies":{"Can I have your phone number ?"},"input":{"type":"tel","placeholder":"Enter your phone number","error":{"Enter a valid phone number"}}};
+								response.put("questions",{question});
+							}
+							else
+							{
+								std_phone = answers.get("std_phone").get("text");
+								if(!answers.containsKey("std_email"))
+								{
+									question = {"name":"std_email","replies":{"Give us your mail id "},"input":{"type":"email","placeholder":"Enter your email","error":{"Enter a valid email"}}};
+									response.put("questions",{question});
+								}
+								else
+								{
+									std_email = answers.get("std_email").get("text");
+									std_values = std_name + "," + std_phone + "," + std_email + "," + amount + "," + enroll_course;
+									response_insert = zoho.sheet.insertCSV("3627n1c8fcf4f3e5940e2a2e35b90ff48065a","Sheet1",std_values);
+									sendmail
+									[
+										from :zoho.adminuserid
+										to :std_email
+										subject :"Course Enrollment Confirmation " + zoho.currenttime
+										message :"<div style='margin-left: 20%;'><p style='font-size:medium;'>Hi " + std_name + ",</p><p>Your course enrollment has been confirmed for the course ~ " + enroll_course + ". Kindly check our website for acessing the course. </p><h3 style='color: rgb(32, 93, 206); font-weight: bold;'>Happy Learning Buddy 🤗 !</h3><p>Regards,</p><p>Team Pedagogy</p><img src='https://thumbs.dreamstime.com/z/bot-learning-study-chatbot-book-online-education-vector-cartoon-illustration-bot-learning-study-chatbot-book-112145804.jpg' alt='Pedagogy logo' width='50' height='50'></div>"
+									]
+									response.put("action","context");
+									response.put("context_id","exit");
+									question = {"name":"done","replies":{"Congrats! Your course enrollment has been successfully confirmed.","You will recieve a confirmation mail.","Would you like to explore more ?"},"suggestions":{"Yes","No thanks"}};
+									response.put("questions",{question});
+								}
+							}
+						}
+					}
+					else
+					{
+						response = Map();
+						response.put("action","context");
+						response.put("context_id","exit");
+						question = {"name":"done","replies":{"Oops! Payment Unsucessfull :( ","Check whether you have paid the correct amount","Now.."},"suggestions":{"Want to explore more","No thanks"}};
+						response.put("questions",{question});
+					}
+				}
+			}
+			else
+			{
+				response = Map();
+				response.put("action","context");
+				response.put("context_id","exit");
+				question = {"name":"done","replies":{"Okay.."},"suggestions":{"Want to explore more","No thanks"}};
+				response.put("questions",{question});
+			}
+		}
+	}
+}
+else if(context_id.equals("quirky"))
+{
+	interest = answers.get("interest").get("text");
+	if(interest.equalsIgnoreCase("Read Books"))
+	{
+		if(!answers.containsKey("book"))
+		{
+			question = {"name":"book","replies":{"The more that you read, the more things you will know 🔖","I'm interested in reading about the universe, and you are interested in ..?"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			book = answers.get("book").get("text");
+			book = book.replaceAll(" ","");
+			if(!answers.containsKey("done"))
+			{
+				try 
+				{
+					bookRes = invokeurl
+					[
+						url :"https://www.googleapis.com/books/v1/volumes?q=" + book
+						type :GET
+						connection:"googlebooks_connection"
+					];
+					results = bookRes.getJson("items");
+					//info bookRes ;
+					images = List();
+					titles = List();
+					authors = List();
+					for each  b in results
+					{
+						current = b.getJSON("volumeInfo").get("title");
+						if(!isNull(current) && b.getJSON("volumeInfo").getJSON("imageLinks") != NULL)
+						{
+							images.add(b.getJSON("volumeInfo").getJSON("imageLinks").get("thumbnail"));
+							titles.add(b.getJSON("volumeInfo").get("title"));
+							authors.add(b.getJSON("volumeInfo").getJSON("authors"));
+						}
+					}
+					response = Map();
+					response.put("action","context");
+					response.put("context_id","exit");
+					question = {"name":"done","replies":{{"type":"multiple-product","text":"You can read these books using Google Books 📖","elements":{{"title":titles.get(0),"subtitle":"~" + authors.get(0),"id":"ID of the product","image":images.get(0)},{"title":titles.get(1),"subtitle":"~" + authors.get(1),"id":"ID of the product","image":images.get(1)},{"title":titles.get(2),"subtitle":"~" + authors.get(2),"id":"ID of the product","image":images.get(2)},{"title":titles.get(3),"subtitle":"~" + authors.get(3),"id":"ID of the product","image":images.get(3)}}}},"suggestions":{"Main menu","No thanks"}};
+					response.put("questions",{question});
+				}
+				catch (e)
+				{
+					response.put("action","context");
+					response.put("context_id","exit");
+					question = {"name":"done","replies":{"Sorry, I couldn't get the books for you now 😢.Try again after some time"},"suggestions":{"Main menu","No thanks"}};
+					response.put("questions",{question});
+					return response;
+				}
+			}
+		}
+	}
+	else if(interest.equalsIgnoreCase("Interesting Facts"))
+	{
+		if(!answers.containsKey("opt"))
+		{
+			mapp = Map();
+			mapp.put("X-Api-Key","Oxx7d+B+6NordfZDNVSJ5Q==yWrFBXfC7ZbIqnBX");
+			response_pay = invokeurl
+			[
+				url :"https://api.api-ninjas.com/v1/facts?limit=1"
+				type :GET
+				headers:mapp
+				connection:"apininjas_connection"
+			];
+			question = {"name":"opt","replies":{"Did you know ? 🙄 ",response_pay.getJson("fact"),"That's seems interesting. Isn't it?"},"suggestions":{"One more","Main menu","No thanks"}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			opt = answers.get("opt").get("text");
+			if(opt.equalsIgnoreCase("one more"))
+			{
+				mapp = Map();
+				mapp.put("X-Api-Key","Oxx7d+B+6NordfZDNVSJ5Q==yWrFBXfC7ZbIqnBX");
+				response_pay = invokeurl
+				[
+					url :"https://api.api-ninjas.com/v1/facts?limit=1"
+					type :GET
+					headers:mapp
+					connection:"apininjas_connection"
+				];
+				question = {"name":"opt","replies":{"Did you know ? 🙄 ",response_pay.getJson("fact"),"That's seems interesting. Isn't it?"},"suggestions":{"One more","Main menu","No thanks"}};
+				response.put("questions",{question});
+			}
+			else if(opt.equalsIgnoreCase("main menu"))
+			{
+				// showing main menu
+				response.put("action","reply");
+				response.put("replies",{"What else do you want?"});
+				response.put("suggestions",{"Practice","Enroll","Top Courses","Talk to experts","Boost Up"});
+				return response;
+			}
+			else
+			{
+				// Get rating and end the chat
+				response.put("action","context");
+				response.put("context_id","nothanks");
+				question = {"name":"select","replies":{"Will you rate me out of 5 🥺 "},"input":{"type":"star-rating","level":"5"}};
+				response.put("questions",{question});
+			}
+		}
+	}
+	
+}
+// Main menu or end the chat
+if(context_id.equals("exit"))
+{
+	done = answers.get("done").get("text");
+	if("No thanks".equals(done))
+	{
+		// Get rating
+		response.put("action","context");
+		response.put("context_id","nothanks");
+		question = {"name":"select","replies":{"Will you rate me out of 5 🥺 "},"input":{"type":"star-rating","level":"5"}};
+		response.put("questions",{question});
+	}
+	else
+	{
+		// Showing the main menu
+		response.put("action","reply");
+		response.put("replies",{"What else do you want?"});
+		response.put("suggestions",{"Practice","Enroll","Top Courses","Talk to experts","Boost Up"});
+		return response;
+	}
+}
+// Ending the chat
+if(context_id.equals("nothanks"))
+{
+	response.put("action","end");
+	response.put("replies",{"It was nice chatting with you 😊, Have a nice day !! Bye👋"});
+}
+return response;
